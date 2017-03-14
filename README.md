@@ -1,6 +1,6 @@
 # Vehicle Detection
 
-![alt text](./white1.gif "Sliding Windows")
+![alt text](./white1.gif "success")
 
 # Introduction
 
@@ -191,9 +191,56 @@ def apply_threshold(heatmap, threshold):
 
 ### Step 6: Track images across frames in a video stream.
 
-For the video implementation, I have used a weighted averaged heatmap to reduce false postive and increase robustness of the pipeline. Specificlly, I do a weight average of the 5 frame, with high importance of the most recent frame, and used that as the heatmap instead.
+For the video implementation, I have used a weighted averaged heatmap to reduce false postive and increase robustness of the pipeline. Specificlly, I do a weight average of the 4 frames, with high importance of the most recent frame, and used that as the heatmap instead.
+
+```
+heat1 = np.zeros_like(img[:,:,0]).astype(np.float)
+heat2 = np.zeros_like(img[:,:,0]).astype(np.float)
+heat3 = np.zeros_like(img[:,:,0]).astype(np.float)
 
 
+def process_image(img):
+    global heat1
+    global heat2
+    global heat3
+    global heat4
+    ystart = 400
+    ystop = 656
+    scale = 1.35
+
+    colorspace = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+    orient = 8
+    pix_per_cell = 8
+    cell_per_block = 2
+    hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
+    spatial_size = (16, 16)
+    hist_bins = 32
+    spatial_feat = True
+    hist_feat = True
+    hog_feat = True
+    svc = pickle.load( open("saved_svc.p", "rb" ) )
+    X_scaler =pickle.load( open( "saved_X_scaler.p", "rb" ) )
+
+    out_img, boxes = find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell,
+                    cell_per_block, spatial_size, hist_bins)
+
+    heat = np.zeros_like(img[:,:,0]).astype(np.float)
+    heat = add_heat(heat,boxes)
+    heat = 0.7*heat + 0.25*heat1+ 0.05*heat2
+    heat = apply_threshold(heat,1.5)
+    heatmap = np.clip(heat, 0, 255)
+    labels = label(heatmap)
+
+    result=draw_labeled_bboxes(img, labels)
+
+    heat1=heat
+    heat2=heat1
+
+
+    return result
+```
+
+Video link: https://youtu.be/9z2tveQMJk0
 ### Discussion
 
 The hard part of the project is the elimination of false positives. The pipeline as it is still falsely identify road/tree/etc as a car. The most efficient way to improve this model is to use Deep learning like SSD or training a more robust identifier (99%).
