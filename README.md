@@ -1,5 +1,6 @@
 # Vehicle Detection
-<a href="https://imgflip.com/gif/1ld6om"><img src="https://i.imgflip.com/1ld6om.gif" title="made at imgflip.com"/></a>
+
+![alt text](./white1.gif "Sliding Windows")
 
 # Introduction
 
@@ -35,6 +36,9 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
 ```
 
 ### Step 2: Extract HOG features and build training datasets
+
+For this step I defined a function `get_hog_features` which uses the Scikit-image function `hog()` to get Histogram of Oriented features from an image. The functions computes the HOG features from each of the 3 color channels in an image and concatenates them to gather in to a single feature vector.
+
 ```
 def extract_features(imgs, cspace='RGB', orient=8,
                         pix_per_cell=8, cell_per_block=4, hog_channel=0):
@@ -156,15 +160,38 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 
     return draw_img, boxes
 ```
+![alt text](./identfycars.png "identy Car")
 
-### Step 5: Drawing Bounding Rectangles
+### Step 5: Extract Heatmap
 
 For this step I defined a function `draw_boxes` which takes as input a list of bounding rectangle coordinates and uses the OpenCV function `cv2.rectangle()` to draw the bounding rectangles on an image.
+
+```
+def add_heat(heatmap, bbox_list):
+    # Iterate through list of bboxes
+    for box in bbox_list:
+        # Add += 1 for all pixels inside each bbox
+        # Assuming each "box" takes the form ((x1, y1), (x2, y2))
+        heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
+
+
+    # Return updated heatmap
+    return heatmap# Iterate through list of bboxes
+
+def apply_threshold(heatmap, threshold):
+    # Zero out pixels below the threshold
+    heatmap[heatmap <= threshold] = 0
+    # Return thresholded map
+    return heatmap
+```
+
+![alt text](./heatmap.png "Heatmap")
+
+![alt text](./identryCarSuccess.png "identy Car with heatmap")
 
 ### Step 6: Track images across frames in a video stream.
 
 For the video implementation, I have used a weighted averaged heatmap to reduce false postive and increase robustness of the pipeline. Specificlly, I do a weight average of the 5 frame, with high importance of the most recent frame, and used that as the heatmap instead.
-
 
 
 ### Discussion
